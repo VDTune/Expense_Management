@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "1006875186967",
+    "project_id": "moneymatedemo",
+    "storage_bucket": "moneymatedemo.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1006875186967:android:b48a6852ae77494ac9c952",
+        "android_client_info": {
+          "package_name": "com.example.example_auth"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1006875186967-gpjsp43l1nsb7e9ikhaj445tqmhcg03k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY53sX9xYS_jwBL2Qb1a-GimdpwVF0uAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1006875186967-gpjsp43l1nsb7e9ikhaj445tqmhcg03k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1006875186967-alpbm67cd3t4jevbvj48i2v49duoe3c7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.expenseManagementApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1006875186967:android:0510e8f04c29f2fbc9c952",
+        "android_client_info": {
+          "package_name": "com.example.expense_tracker"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1006875186967-8j4j1rahl8jhkkthnvob3daqe09fimhb.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.expense_tracker",
+            "certificate_hash": "99bfcd7ed0beb5621fd4de1b7efda8275e8344a1"
+          }
+        },
+        {
+          "client_id": "1006875186967-gpjsp43l1nsb7e9ikhaj445tqmhcg03k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDY53sX9xYS_jwBL2Qb1a-GimdpwVF0uAE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1006875186967-gpjsp43l1nsb7e9ikhaj445tqmhcg03k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1006875186967-alpbm67cd3t4jevbvj48i2v49duoe3c7.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.expenseManagementApp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
