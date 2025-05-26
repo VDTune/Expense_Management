@@ -2,7 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class ChatScreen extends StatefulWidget {
   @override
@@ -13,11 +14,12 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _controller = TextEditingController();
   final List<Map<String, dynamic>> _messages = [];
   bool _isTyping = false;
-  StreamSubscription? _streamSubscription;
   final ImagePicker _picker = ImagePicker();
 
+  final String apiKey = 'AIzaSyCHrghQxVBd0eVQXLv_Y9XmXGkDDpWfV8U';
+
   /// Gửi tin nhắn và xử lý phản hồi từ Gemini
-  void _sendMessage({File? image}) async {
+  Future<void> _sendMessage({File? image}) async {
     final message = _controller.text.trim();
 
     if (message.isNotEmpty || image != null) {
@@ -30,36 +32,76 @@ class _ChatScreenState extends State<ChatScreen> {
         _isTyping = true;
       });
 
-      // Nếu có hình ảnh, xử lý gửi văn bản và ảnh
-      if (image != null) {
-        final response = await Gemini.instance.textAndImage(
-          text: message,
-          images: [await image.readAsBytes()],
-        );
-        final combinedText = response?.content?.parts?.map((e) => e.text).join(" ") ?? 'Không có phản hồi';
-
-        _addResponse(combinedText);
-      } else {
-        // Nếu chỉ có văn bản, gửi yêu cầu văn bản
-        String combinedResponse = "";
-        _streamSubscription = Gemini.instance.streamGenerateContent(message).listen(
-              (response) {
-            combinedResponse += response.output ?? "";
-          },
-          onDone: () {
-            _addResponse(combinedResponse);
-          },
-          onError: (error) {
-            _addResponse("Xin lỗi, có lỗi xảy ra khi xử lý yêu cầu của bạn.");
-          },
-        );
+      try {
+        if (image != null) {
+          // Xử lý gửi hình ảnh (tạm thời bỏ qua vì API không hỗ trợ ảnh trong đoạn code này)
+          _addResponse("Hỗ trợ gửi ảnh sẽ được thêm sau.");
+        } else {
+          // Gửi yêu cầu văn bản
+          final response = await _callGeminiApi(message);
+          _addResponse(response);
+        }
+      } catch (e) {
+        print("Lỗi: $e");
+        _addResponse("Lỗi khi xử lý yêu cầu: $e");
+      } finally {
+        _controller.clear();
+        setState(() {
+          _isTyping = false;
+        });
       }
-
-      _controller.clear();
+    } else {
+      _addResponse("Vui lòng nhập tin nhắn hoặc chọn ảnh.");
     }
   }
 
-  /// Thêm phản hồi của Gemini vào tin nhắn
+  /// Gọi API Gemini trực tiếp bằng package http
+  Future<String> _callGeminiApi(String text) async {
+    const model = 'gemini-1.5-flash'; // Thay bằng model hợp lệ (ví dụ: gemini-pro hoặc gemini-1.5-flash)
+    final url = Uri.parse(
+        'https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent?key=$apiKey');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'contents': [
+            {
+              'parts': [
+                {'text': text}
+              ]
+            }
+          ],
+          // Thêm cấu hình nếu cần
+          'generationConfig': {
+            'temperature': 0.7,
+            'topP': 0.9,
+            'maxOutputTokens': 1000,
+          },
+        }),
+      );
+
+      print("Mã trạng thái: ${response.statusCode}");
+      print("Phản hồi: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['candidates'][0]['content']['parts'][0]['text'] ?? 'Không có phản hồi';
+      } else if (response.statusCode == 400) {
+        throw Exception(
+            "Lỗi 400: Yêu cầu không hợp lệ. Kiểm tra cú pháp hoặc model ($model). Phản hồi: ${response.body}");
+      } else if (response.statusCode == 403) {
+        throw Exception("Lỗi 403: API Key không hợp lệ hoặc không có quyền truy cập.");
+      } else {
+        throw Exception("Lỗi ${response.statusCode}: ${response.body}");
+      }
+    } catch (e) {
+      throw Exception("Lỗi khi gọi API Gemini: $e");
+    }
+  }
+
+  /// Thêm phản hồi vào tin nhắn
   void _addResponse(String text) {
     setState(() {
       _messages.add({"text": text, "isUser": false});
@@ -69,15 +111,25 @@ class _ChatScreenState extends State<ChatScreen> {
 
   /// Chọn ảnh từ thư viện và gửi đi
   Future<void> _sendImage() async {
-    final XFile? imageFile = await _picker.pickImage(source: ImageSource.gallery);
-    if (imageFile != null) {
-      _sendMessage(image: File(imageFile.path));
+    try {
+      final XFile? imageFile = await _picker.pickImage(source: ImageSource.gallery);
+      if (imageFile == null) {
+        _addResponse("Không chọn được ảnh, vui lòng thử lại.");
+        return;
+      }
+      final image = File(imageFile.path);
+      if (!await image.exists()) {
+        throw Exception("File ảnh không tồn tại: ${imageFile.path}");
+      }
+      _sendMessage(image: image);
+    } catch (e) {
+      _addResponse("Lỗi khi chọn hoặc gửi ảnh: $e");
     }
   }
 
   @override
   void dispose() {
-    _streamSubscription?.cancel();
+    _controller.dispose();
     super.dispose();
   }
 
@@ -90,7 +142,6 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: Column(
         children: [
-          // Danh sách tin nhắn
           Expanded(
             child: ListView.builder(
               itemCount: _messages.length,
@@ -134,6 +185,9 @@ class _ChatScreenState extends State<ChatScreen> {
                                 width: 150,
                                 height: 150,
                                 fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Text("Lỗi hiển thị ảnh: $error");
+                                },
                               ),
                             ),
                         ],
@@ -144,8 +198,6 @@ class _ChatScreenState extends State<ChatScreen> {
               },
             ),
           ),
-
-          // Hiển thị "đang nhập..."
           if (_isTyping)
             Padding(
               padding: const EdgeInsets.all(8.0),
@@ -158,8 +210,6 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-
-          // Thanh nhập tin nhắn và nút gửi
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: Row(

@@ -1,19 +1,17 @@
 import 'package:expense_tracker/widgets/auth_gate.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gemini/flutter_gemini.dart';
 import 'firebase_options.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-
-  // Initialize Gemini with your API key
-  Gemini.init(apiKey: 'AIzaSyCMDHADVcf1EITJGrXIHcgtqyzVZ1-pBgc');
+  if (Firebase.apps.isEmpty) {
+    await Firebase.initializeApp(
+      name: "expense_tracker",
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  }
 
   runApp(const MyApp());
 }
@@ -37,7 +35,7 @@ class MyApp extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       debugShowCheckedModeBanner: false,
-      home: AuthGate(),  // Your authentication gate
+      home: AuthGate(),
     );
   }
 }

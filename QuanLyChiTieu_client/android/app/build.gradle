@@ -7,6 +7,18 @@ plugins {
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
 }
+dependencies {
+
+    implementation platform('com.google.firebase:firebase-bom:33.14.0')
+
+    // Thêm Firebase Analytics
+    implementation 'com.google.firebase:firebase-analytics'
+    implementation 'com.google.android.gms:play-services-base:18.5.0'
+
+    // Thêm các sản phẩm Firebase khác mà bạn muốn sử dụng
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
+}
 
 def localProperties = new Properties()
 def localPropertiesFile = rootProject.file("local.properties")

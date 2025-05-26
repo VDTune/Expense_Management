@@ -18,3 +18,16 @@ subprojects {
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }
+
+buildscript {
+    repositories {
+        google()
+        mavenCentral()
+    }
+    dependencies {
+        // Các dependencies khác...
+
+        // Thêm dependency cho Google services Gradle plugin
+        classpath 'com.google.gms:google-services:4.4.2'
+    }
+}

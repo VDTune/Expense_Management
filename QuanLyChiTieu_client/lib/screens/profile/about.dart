@@ -44,9 +44,6 @@ class About extends StatelessWidget {
             Text(
               'Ứng dụng quản lý chi tiêu - Sản phẩm học phần phát triển ứng dụng di dộng đa nền tảng\n'
               '\nSinh viên thực hiện: \n'
-                  'Tào Nguyên Văn \n'
-                  'Nguyễn An Toàn \n'
-                  'Nguyễn Đức Trung \n'
                   'Võ Đức Tuân \n',
 
               style: TextStyle(fontSize: 18),
@@ -71,7 +68,7 @@ class About extends StatelessWidget {
                       Icon(Icons.facebook, color: Colors.blue),
                       SizedBox(width: 10),
                       Text(
-                        'Nguyên Văn',
+                        'Đức Tuân',
                         style: TextStyle(color: Colors.white),
                       ),
                     ],
@@ -92,7 +89,7 @@ class About extends StatelessWidget {
                       Icon(Icons.email, color: Colors.white),
                       SizedBox(width: 10),
                       Text(
-                        'vantao2910@gmail.com',
+                        'voductuan1305@gmail.com',
                         style: TextStyle(color: Colors.black),
                       ),
                     ],
@@ -134,7 +131,7 @@ class About extends StatelessWidget {
                       Icon(Icons.call, color: Colors.green),
                       SizedBox(width: 10),
                       Text(
-                        '0372171784',
+                        '0818741182',
                         style: TextStyle(color: Colors.black),
                       ),
                     ],
