@@ -1,57 +1,31 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
-class CategoryDropdown extends StatelessWidget {
-  CategoryDropdown({super.key, this.cattype, required this.onChanged});
-  static const Map<String, IconData> iconMap = {
-    'home': FontAwesomeIcons.home,
-    'lightbulb': FontAwesomeIcons.lightbulb,
-    'shoppingCart': FontAwesomeIcons.shoppingCart,
-    'bus': FontAwesomeIcons.bus,
-    'film': FontAwesomeIcons.film,
-    'heart': FontAwesomeIcons.heart,
-    'shieldHalved': FontAwesomeIcons.shieldHalved,
-    'piggyBank': FontAwesomeIcons.piggyBank,
-    'utensils': FontAwesomeIcons.utensils,
-    'shoppingBag': FontAwesomeIcons.shoppingBag,
-    'graduationCap': FontAwesomeIcons.graduationCap,
-    'gift': FontAwesomeIcons.gift,
-    'plane': FontAwesomeIcons.plane,
-    'gasPump': FontAwesomeIcons.gasPump,
-    'tshirt': FontAwesomeIcons.tshirt,
-    'mobileAlt': FontAwesomeIcons.mobileAlt,
-    'book': FontAwesomeIcons.book,
-    'footballBall': FontAwesomeIcons.footballBall,
-    'paw': FontAwesomeIcons.paw,
-    'handsHelping': FontAwesomeIcons.handsHelping,
-    'chartLine': FontAwesomeIcons.chartLine,
-    'music': FontAwesomeIcons.music,
-    'paintBrush': FontAwesomeIcons.paintBrush,
-    'fileInvoiceDollar': FontAwesomeIcons.fileInvoiceDollar,
-    'moneyCheck': FontAwesomeIcons.moneyCheck,
-    'fileAlt': FontAwesomeIcons.fileAlt,
-    'handshake': FontAwesomeIcons.handshake,
-    'baby': FontAwesomeIcons.baby,
-    'hammer': FontAwesomeIcons.hammer,
-    'dumbbell': FontAwesomeIcons.dumbbell,
-    'creditCard': FontAwesomeIcons.creditCard,
-    'palette': FontAwesomeIcons.palette,
-    'spa': FontAwesomeIcons.spa,
-    'broom': FontAwesomeIcons.broom,
-    'ticketAlt': FontAwesomeIcons.ticketAlt,
-    'ring': FontAwesomeIcons.ring,
-    'cocktail': FontAwesomeIcons.cocktail,
-    'firstAid': FontAwesomeIcons.firstAid,
-    'ellipsis': FontAwesomeIcons.ellipsis,
-  };
+import '../../../utils/app_icons.dart';
+
+class CategoryDropdown extends StatefulWidget {
   final String? cattype;
   final ValueChanged<String?> onChanged;
+
+  const CategoryDropdown({super.key, this.cattype, required this.onChanged});
+
+  @override
+  _CategoryDropdownState createState() => _CategoryDropdownState();
+}
+
+class _CategoryDropdownState extends State<CategoryDropdown> {
+  String? selectedCategory;
 
   Future<List<Map<String, dynamic>>> _fetchCategories() async {
     final snapshot = await FirebaseFirestore.instance.collection('categories').get();
     return snapshot.docs.map((doc) => doc.data()).toList();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    selectedCategory = widget.cattype;
   }
 
   @override
@@ -68,26 +42,46 @@ class CategoryDropdown extends StatelessWidget {
         }
 
         final categories = snapshot.data!;
-        return DropdownButton<String>(
-          value: cattype,
+
+        bool isValidValue = categories.any((e) => e['name'] == selectedCategory);
+        if (!isValidValue && categories.isNotEmpty) {
+          selectedCategory = categories[0]['name'];
+          widget.onChanged(selectedCategory);
+        }
+
+        return DropdownButtonFormField<String>(
+          value: selectedCategory,
           isExpanded: true,
-          hint: Text("Chọn loại"),
-          items: categories
-              .map((e) => DropdownMenuItem<String>(
-              value: e['name'], // Đảm bảo Firestore có trường 'name'
+          hint: Text("Chọn danh mục"),
+          items: categories.map((e) {
+            final iconName = e['icon'] ?? 'ellipsis';
+            print("Icon name for ${e['name']}: $iconName"); // Debug
+            return DropdownMenuItem<String>(
+              value: e['name'],
               child: Row(
                 children: [
-                  // Icon(IconData(e['icon'], fontFamily: 'MaterialIcons'), color: Colors.black26), // Chuyển 'icon' thành dạng IconData
-                  Icon(iconMap[e['icon']] ?? FontAwesomeIcons.questionCircle, color: Colors.black26),
+                  Icon(
+                    AppIcons.getIconByName(iconName),
+                    color: Colors.black26,
+                  ),
                   SizedBox(width: 10),
                   Text(
                     e['name'],
                     style: TextStyle(color: Colors.black26),
                   ),
                 ],
-              )))
-              .toList(),
-          onChanged: onChanged,
+              ),
+            );
+          }).toList(),
+          onChanged: (String? newValue) {
+            setState(() {
+              selectedCategory = newValue;
+            });
+            widget.onChanged(newValue);
+            print("Selected category changed to: $newValue"); // Debug
+          },
+          decoration: InputDecoration(labelText: 'Danh mục'),
+          validator: (value) => value == null ? 'Vui lòng chọn danh mục' : null,
         );
       },
     );

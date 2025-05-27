@@ -36,8 +36,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       titleEditController.text = widget.transactionData!['title'];
       amountEditController.text = widget.transactionData!['amount'].toString();
       _selectedDate = widget.transactionData!['date']?.toDate();
-      category = widget.transactionData!['category'];
-      type = widget.transactionData!['type'];
+      category = widget.transactionData!['category'] ?? "Khác"; // Đảm bảo category không null
+      type = widget.transactionData!['type'] ?? "credit"; // Đảm bảo type không null
     }
   }
 
@@ -64,77 +64,99 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         isLoader = true;
       });
 
-      final user = FirebaseAuth.instance.currentUser!;
-      final String transactionId = widget.transactionData!['id'];
-      final int newAmount = int.parse(amountEditController.text);
-      final DateTime date = _selectedDate ?? DateTime.now();
-      final int newTimestamp = date.microsecondsSinceEpoch;
+      try {
+        final user = FirebaseAuth.instance.currentUser!;
+        final String transactionId = widget.transactionData!['id'];
+        final int newAmount = int.parse(amountEditController.text);
+        final DateTime date = _selectedDate ?? DateTime.now();
+        final int newTimestamp = DateTime.now().microsecondsSinceEpoch; // Cập nhật thời gian chỉnh sửa
+        final String monthyear = DateFormat('M/y').format(date);
 
-      final existingTransactionDoc = await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('transactions')
-          .doc(transactionId)
-          .get();
+        // Lấy dữ liệu giao dịch hiện tại
+        final existingTransactionDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('transactions')
+            .doc(transactionId)
+            .get();
 
-      final existingTransactionData = existingTransactionDoc.data()!;
-      final int oldAmount = existingTransactionData['amount'];
-      final String oldType = existingTransactionData['type'];
-      final int oldTimestamp = existingTransactionData['timestamp'];
+        if (!existingTransactionDoc.exists) {
+          throw Exception("Giao dịch không tồn tại");
+        }
 
-      int creditChange = 0;
-      int debitChange = 0;
+        final existingTransactionData = existingTransactionDoc.data()!;
+        final int oldAmount = existingTransactionData['amount'];
+        final String oldType = existingTransactionData['type'];
 
-      if (oldType == 'credit') {
-        creditChange = -oldAmount;
-      } else {
-        debitChange = -oldAmount;
-      }
+        // Tính toán thay đổi cho totalCredit, totalDebit, remainingAmount
+        int creditChange = 0;
+        int debitChange = 0;
 
-      if (newAmount > 0) {
+        // Hoàn tác giá trị cũ
+        if (oldType == 'credit') {
+          creditChange -= oldAmount;
+        } else {
+          debitChange -= oldAmount;
+        }
+
+        // Áp dụng giá trị mới
         if (type == 'credit') {
           creditChange += newAmount;
         } else {
           debitChange += newAmount;
         }
-      }
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userId)
-          .collection('transactions')
-          .doc(transactionId)
-          .update({
-        'amount': newAmount,
-        'type': type,
-        'totalAmount': newAmount,
-        'date': date,
-        'timestamp': oldTimestamp,
-      });
-
-
-      final userDoc =
-          FirebaseFirestore.instance.collection('users').doc(userId);
-
-      await FirebaseFirestore.instance.runTransaction((transaction) async {
-        final userSnapshot = await transaction.get(userDoc);
-        final userData = userSnapshot.data()!;
-
-        int totalCredit = (userData['totalCredit'] as int) + creditChange;
-        int totalDebit = (userData['totalDebit'] as int) + debitChange;
-        int remainingAmount = totalCredit - totalDebit;
-
-        transaction.update(userDoc, {
-          'totalCredit': totalCredit,
-          'totalDebit': totalDebit,
-          'remainingAmount': remainingAmount,
+        // Cập nhật giao dịch trong Firestore
+        await FirebaseFirestore.instance
+            .collection('users')
+            .doc(userId)
+            .collection('transactions')
+            .doc(transactionId)
+            .update({
+          'title': titleEditController.text, // Cập nhật tiêu đề
+          'amount': newAmount, // Cập nhật số tiền
+          'type': type, // Cập nhật loại giao dịch
+          'category': category, // Cập nhật danh mục
+          'date': date, // Cập nhật ngày
+          'timestamp': newTimestamp, // Cập nhật thời gian chỉnh sửa
+          'monthyear': monthyear, // Cập nhật tháng/năm
         });
-      });
 
-      Navigator.pop(context);
-      setState(() {
-        isLoader = false;
-      });
+        // Cập nhật tổng số liệu của người dùng
+        final userDoc = FirebaseFirestore.instance.collection('users').doc(userId);
+
+        await FirebaseFirestore.instance.runTransaction((transaction) async {
+          final userSnapshot = await transaction.get(userDoc);
+          if (!userSnapshot.exists) {
+            throw Exception("Dữ liệu người dùng không tồn tại");
+          }
+
+          final userData = userSnapshot.data()!;
+          int totalCredit = (userData['totalCredit'] as int) + creditChange;
+          int totalDebit = (userData['totalDebit'] as int) + debitChange;
+          int remainingAmount = totalCredit - totalDebit;
+
+          transaction.update(userDoc, {
+            'totalCredit': totalCredit,
+            'totalDebit': totalDebit,
+            'remainingAmount': remainingAmount,
+            'updatedAt': newTimestamp, // Cập nhật thời gian chỉnh sửa của người dùng
+          });
+        });
+
+        print("Giao dịch đã được cập nhật: $transactionId, category: $category");
+
+        Navigator.pop(context);
+      } catch (e) {
+        print("Lỗi khi cập nhật giao dịch: $e");
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Lỗi: $e")),
+        );
+      } finally {
+        setState(() {
+          isLoader = false;
+        });
+      }
     }
   }
 
@@ -191,10 +213,11 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     setState(() {
                       category = value;
                     });
+                    print("Category updated to: $category"); // Debug
                   }
                 },
               ),
-              DropdownButtonFormField(
+              DropdownButtonFormField<String>(
                 value: type,
                 items: [
                   DropdownMenuItem(
@@ -209,15 +232,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                 onChanged: (value) {
                   if (value != null) {
                     setState(() {
-                      type = value.toString();
+                      type = value;
                     });
+                    print("Type updated to: $type"); // Debug
                   }
                 },
+                decoration: InputDecoration(labelText: 'Loại giao dịch'),
               ),
               SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () {
-                  if (isLoader == false) {
+                  if (!isLoader) {
                     _submitForm();
                   }
                 },

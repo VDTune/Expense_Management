@@ -288,7 +288,7 @@ class _PieChartScreenState extends State<PieChartScreen> {
                 }
 
                 String chartTitle =
-                    selectedType == 'credit' ? 'Thanh toán' : 'Thu nhập';
+                    selectedType == 'credit' ? 'Thu nhập' : 'Thanh toán';
 
                 return Column(
                   children: [

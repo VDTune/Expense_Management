@@ -238,6 +238,7 @@ class _AddTransactionFormState extends State<AddTransactionForm> {
                   setState(() {
                     category = value;
                   });
+                  print("Category updated to: $category"); // Debug
                 }
               },
             ),
